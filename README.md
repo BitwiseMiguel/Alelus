@@ -156,6 +156,7 @@ Options can be combined with any target:
 ```sh
 make tests MODE=release      # optimised build (-O2) instead of debug
 make tests WERROR=1          # warnings are errors
+make tests SANITIZE=1        # check for memory errors and undefined behaviour (Linux, macOS)
 make tests CXX=clang++       # another compiler
 make tests T="[crypto]"      # only the tests with a tag or name
 make bench B="shuffle"       # only the measurements whose name contains it

@@ -24,6 +24,9 @@ Every change must pass this checklist:
       passes.
 - [ ] It also builds with the other compiler: `make clean && make tests WERROR=1 CXX=clang++`
       (or `CXX=g++` if you normally use clang).
+- [ ] The tests pass under the sanitizers: `make tests SANITIZE=1` (Linux or macOS; MinGW on
+      Windows does not support them). They stop at the first memory error or undefined
+      behaviour, and print the line where it happened.
 - [ ] `make format` leaves no changes (`git diff` is empty after running it).
 - [ ] New behaviour has tests, and fixed bugs have a test that failed before the fix.
 - [ ] Public functions and classes have a short comment explaining what they do.
@@ -33,9 +36,10 @@ Every change must pass this checklist:
 
 GitHub Actions runs most of this checklist automatically on every push and pull request
 (`.github/workflows/ci.yml`): the tests with g++ and clang on Linux, Apple clang on macOS and
-MSYS2 g++ on Windows, in debug and release, with warnings as errors, plus the formatting check.
-A pull request is merged only when every job is green. The CI uses the clang-format of Ubuntu
-24.04 (version 18); another version may format a few lines differently.
+MSYS2 g++ on Windows, in debug and release, with warnings as errors; the tests under the
+sanitizers on Linux; and the formatting check. A pull request is merged only when every job
+is green. The CI uses the clang-format of Ubuntu 24.04 (version 18); another version may
+format a few lines differently.
 
 ## Code conventions
 

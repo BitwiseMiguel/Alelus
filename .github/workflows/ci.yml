@@ -5,8 +5,12 @@
 
 name: CI
 
+# Pushes run the CI only on Master; other branches are tested through their pull request.
+# With "push" for every branch, a push to a branch with an open pull request would run
+# everything twice: once for the push and once for the pull request.
 on:
   push:
+    branches: [Master] # case-sensitive, like every git branch name
   pull_request:
   workflow_dispatch: # adds a "Run workflow" button in the Actions tab
 
@@ -39,6 +43,23 @@ jobs:
         run: |
           make bench-binary CXX=${{ matrix.compiler }} MODE=release WERROR=1
           make dist CXX=${{ matrix.compiler }} WERROR=1
+
+  sanitizers:
+    name: Sanitizers, ${{ matrix.compiler }}, ${{ matrix.mode }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+        mode: [debug, release]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install the clang sanitizer runtime
+        # Not part of the base clang package on Ubuntu 24.04
+        if: matrix.compiler == 'clang++'
+        run: sudo apt-get update && sudo apt-get install -y libclang-rt-18-dev
+      - name: Build and run the tests with AddressSanitizer and UndefinedBehaviorSanitizer
+        run: make tests CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} SANITIZE=1 WERROR=1
 
   macos:
     name: macOS, Apple clang, ${{ matrix.mode }}

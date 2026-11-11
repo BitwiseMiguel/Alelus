@@ -12,6 +12,8 @@
 # Options:
 #   MODE=release     optimised build (-O2) instead of debug (-g -O0)
 #   WERROR=1         treat compiler warnings as errors
+#   SANITIZE=1       make tests: check for memory errors and undefined behaviour while the
+#                    tests run (AddressSanitizer + UndefinedBehaviorSanitizer; Linux, macOS)
 #   T="name"         make tests: run only the tests whose name or tag matches, e.g. T=[fast]
 #   B="name"         make bench: run only the measurements whose name contains it
 #   CXX=clang++      use another compiler (default: g++)
@@ -21,7 +23,7 @@
 # =============================================================================
 
 MODE  ?= debug
-BUILD := build/$(MODE)
+BUILD := build/$(MODE)$(if $(SANITIZE),-sanitize)
 
 # --- Compiler flags -----------------------------------------------------------
 CXXFLAGS := -std=c++20 -Wall -Wextra -Wpedantic -Wshadow
@@ -32,6 +34,21 @@ else
 endif
 ifeq ($(WERROR),1)
     CXXFLAGS += -Werror
+endif
+# The sanitizers add checks to the compiled code: every memory access is checked against
+# the bounds of its object (address), and operations whose result C++ leaves undefined,
+# such as signed overflow or shifting by 64 bits, are reported (undefined). The first
+# error stops the program, so a test run with an error fails. The objects go to their own
+# folder (see BUILD above): mixing checked and unchecked objects does not work.
+ifeq ($(SANITIZE),1)
+    CXXFLAGS += -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+    # With the sanitizers and -O2, g++ reports "may be used uninitialized" inside the
+    # standard library (std::regex, used by Catch2): the extra checks confuse its analysis.
+    # The normal builds keep this warning on, so our own code is still checked for it.
+    # clang has no such warning, and rejects the option.
+    ifeq ($(findstring clang,$(CXX)),)
+        CXXFLAGS += -Wno-maybe-uninitialized
+    endif
 endif
 
 # -MMD -MP: next to each .o, the compiler writes a .d file listing the headers that
@@ -46,6 +63,13 @@ CPPFLAGS := -Iinclude -MMD -MP
 ifeq ($(OS),Windows_NT)
     EXE      := .exe
     LDLIBS   := -lbcrypt
+    # MinGW's g++ ships without the sanitizer libraries: stop with a clear message instead
+    # of a linker error about -lasan
+    ifeq ($(SANITIZE),1)
+        ifeq ($(findstring clang,$(CXX)),)
+            $(error SANITIZE=1 is not supported by MinGW g++ on Windows. Run it on Linux or WSL; the CI runs it on every pull request)
+        endif
+    endif
 else
     CXXFLAGS += -pthread
     LDLIBS   := -pthread
@@ -115,7 +139,7 @@ bench-binary: $(BENCH_BIN)
 	@:
 
 bench:
-	@$(MAKE) --no-print-directory MODE=release bench-binary
+	@$(MAKE) --no-print-directory MODE=release SANITIZE= bench-binary
 	@./build/release/alelus_bench$(EXE) $(if $(B),"$(B)")
 
 # dist/alelus/ holds everything another project needs: the public headers and the
@@ -123,7 +147,7 @@ bench:
 DIST := dist/alelus
 
 dist:
-	@$(MAKE) --no-print-directory MODE=release all
+	@$(MAKE) --no-print-directory MODE=release SANITIZE= all
 	@rm -rf $(DIST)
 	@mkdir -p $(DIST)/include $(DIST)/lib
 	@cp -r include/alelus $(DIST)/include/
