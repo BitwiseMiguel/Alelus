@@ -3,6 +3,7 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 
 #include "alelus/splitmix64.hpp"
@@ -15,6 +16,29 @@ class FastRNG {
 public:
     /// 256 bits of state, as four 64-bit words.
     using State = std::array<std::uint64_t, 4>;
+
+    // --- std::uniform_random_bit_generator ----------------------------------------
+    // These four members are what the standard library requires from a generator.
+    // With them, FastRNG works with std::shuffle, std::uniform_int_distribution, etc.
+
+    /// The type of the numbers produced.
+    using result_type = std::uint64_t;
+
+    /// The smallest and largest values operator() can return. They must be static and
+    /// constexpr: the standard library reads them at compile time, without an object.
+    static constexpr result_type min() noexcept {
+        return 0;
+    }
+    static constexpr result_type max() noexcept {
+        return std::numeric_limits<result_type>::max();
+    }
+
+    /// Same as next(): calling the generator like a function is how the standard library
+    /// asks for a number.
+    result_type operator()() noexcept {
+        return next();
+    }
+    // -------------------------------------------------------------------------------
 
     /// Starts from the given state.
     /// Throws std::invalid_argument if every word is zero: xoshiro256** would then
@@ -46,6 +70,16 @@ public:
 
         return result;
     }
+
+    /// Advances n steps without returning anything, like the standard library engines.
+    void discard(unsigned long long n) noexcept {
+        while (n-- > 0)
+            (void)next();
+    }
+
+    /// Two generators are equal if their states are equal, that is, if they will produce
+    /// exactly the same sequence. "= default" asks the compiler to compare every member.
+    friend bool operator==(const FastRNG &, const FastRNG &) = default;
 
     /// The current state.
     [[nodiscard]] const State &state() const noexcept {
