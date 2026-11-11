@@ -1,9 +1,12 @@
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
 
 #include "alelus/detail/chacha20_generator.hpp"
+#include "alelus/detail/uniform.hpp"
 
 namespace alelus {
 
@@ -32,6 +35,39 @@ public:
     /// Gets a 256-bit key from the operating system.
     /// Throws std::runtime_error if the operating system cannot provide it.
     CryptoRNG();
+
+    /// Uniform integer in [lo, hi], both included, with no modulo bias.
+    /// The result has the type of the arguments: rng.uniform_int(1, 6) returns an int.
+    /// If they differ, the larger common type: rng.uniform_int(1, v.size()) returns a size_t.
+    /// A type can also be given: rng.uniform_int<std::int16_t>(1, 6).
+    /// Throws std::invalid_argument if lo > hi, and std::out_of_range if lo or hi does not
+    /// fit in the result type (for example uniform_int(-1, 5u), with a negative unsigned).
+    template <class R = detail::DeduceType, std::integral A, std::integral B>
+        requires(!std::same_as<A, bool> && !std::same_as<B, bool>)
+    detail::UniformIntResult<R, A, B> uniform_int(A lo, B hi) {
+        return detail::uniform_int_mixed<R>(*this, lo, hi);
+    }
+
+    /// Uniform integer in [0, n): n itself is NOT included. rng.uniform_int(6) returns 0 to 5,
+    /// and rng.uniform_int(v.size()) returns a valid index of v.
+    /// Throws std::invalid_argument if n <= 0 (there would be no value to return).
+    template <std::integral T>
+        requires(!std::same_as<T, bool>)
+    T uniform_int(T n) {
+        if (n <= 0)
+            throw std::invalid_argument("uniform_int: n must be greater than zero");
+        // The cast matters for small types: n - 1 is computed as int
+        return detail::uniform_int(*this, T{0}, static_cast<T>(n - 1));
+    }
+
+    /// Uniform integer over every value of T. By default T is std::uint64_t (64 random bits);
+    /// rng.uniform_int<int>() covers every int, negative ones included.
+    template <std::integral T = std::uint64_t>
+        requires(!std::same_as<T, bool>)
+    T uniform_int() {
+        return detail::uniform_int(*this, std::numeric_limits<T>::min(),
+                                   std::numeric_limits<T>::max());
+    }
 
     // Neither copyable nor movable: the secret state lives in exactly one place
     CryptoRNG(const CryptoRNG &) = delete;

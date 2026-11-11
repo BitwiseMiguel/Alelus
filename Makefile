@@ -38,10 +38,14 @@ CPPFLAGS := -Iinclude -MMD -MP
 
 # --- Platform ------------------------------------------------------------------
 # On Windows, BCryptGenRandom (src/os_entropy.cpp) lives in the bcrypt system library,
-# which is not linked by default
+# which is not linked by default.
+# Elsewhere, pthread_atfork (src/fork_guard.cpp) needs the system thread library.
 ifeq ($(OS),Windows_NT)
-    EXE    := .exe
-    LDLIBS := -lbcrypt
+    EXE      := .exe
+    LDLIBS   := -lbcrypt
+else
+    CXXFLAGS += -pthread
+    LDLIBS   := -pthread
 endif
 
 # --- Files ---------------------------------------------------------------------
