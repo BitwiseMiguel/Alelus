@@ -30,6 +30,7 @@ A C++20 random number library with two generators:
 ```sh
 make             # build the library
 make tests       # build and run the tests
+make bench       # measure the speed of every operation (release build)
 make dist        # package headers + release library in dist/alelus/
 make help        # all targets and options
 ```
@@ -50,6 +51,7 @@ On Windows, add `-lbcrypt` at the end; on Linux and macOS, add `-pthread`.
 include/alelus/   public headers
 src/              library sources
 tests/            unit tests (Catch2)
+bench/            benchmark (make bench)
 ```
 
 All text files use Windows line endings (CRLF). `.gitattributes` keeps them that way on every
