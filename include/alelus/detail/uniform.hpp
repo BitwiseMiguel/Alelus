@@ -13,6 +13,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "alelus/detail/mul128.hpp"
+
 // Internal: the algorithms behind the methods of FastRNG and CryptoRNG. They are written
 // once here, so both classes share the same tested code.
 namespace alelus::detail {
@@ -25,25 +27,29 @@ concept Random64 = std::uniform_random_bit_generator<Rng> &&
 
 /// Uniform integer in [0, n), with no modulo bias.
 ///
-/// Algorithm: bitmask with rejection. Keep only as many low bits as n - 1 needs; if the
-/// result is still too large, throw it away and draw again. Every accepted value had the
-/// same chance, so the result is exactly uniform. At most half of the draws are rejected,
-/// so on average it needs fewer than 2 draws.
+/// Algorithm: Daniel Lemire, "Fast Random Integer Generation in an Interval" (2019).
+/// Multiply a random 64-bit x by n, as a 128-bit product. Its high half, floor(x * n / 2^64),
+/// is already in [0, n): it scales [0, 2^64) down to [0, n). It is not quite uniform,
+/// because 2^64 values do not split evenly into n groups: each result gets either
+/// floor(2^64 / n) or one more value of x. Rejecting the x whose low half falls below
+/// 2^64 mod n removes exactly those extra values, so the result is exactly uniform.
+///
+/// Why it is fast: the check "low < n" is false almost always, and only then is the
+/// threshold 2^64 mod n (a slow division) computed. Usually there is one multiplication,
+/// one comparison, and no division at all.
 template <Random64 Rng>
 std::uint64_t uniform_below(Rng &rng, std::uint64_t n) {
     if (n == 0)
         throw std::invalid_argument("uniform_below: n must be greater than zero");
 
-    const std::uint64_t max_value = n - 1;
-    // A mask with as many bits as max_value. The "| 1" avoids countl_zero(0) == 64, which
-    // would make the shift undefined.
-    const std::uint64_t mask = ~std::uint64_t{0} >> std::countl_zero(max_value | 1);
-
-    std::uint64_t x;
-    do {
-        x = rng() & mask;
-    } while (x > max_value);
-    return x;
+    U128 m = mul_64x64(rng(), n);
+    if (m.lo < n) {
+        // (0 - n) is 2^64 - n in unsigned arithmetic; (2^64 - n) % n == 2^64 % n
+        const std::uint64_t threshold = (0 - n) % n;
+        while (m.lo < threshold)
+            m = mul_64x64(rng(), n);
+    }
+    return m.hi;
 }
 
 /// Uniform integer in the closed interval [lo, hi], for any integer type except bool.

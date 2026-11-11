@@ -27,12 +27,23 @@ Every change must pass this checklist:
 - [ ] `make format` leaves no changes (`git diff` is empty after running it).
 - [ ] New behaviour has tests, and fixed bugs have a test that failed before the fix.
 - [ ] Public functions and classes have a short comment explaining what they do.
+- [ ] Changes made for speed include `make bench` numbers from before and after, with both
+      compilers. Differences of 1 to 2 ns are within the noise.
+- [ ] If the change affects how the library is used, `README.md` is updated.
+
+GitHub Actions runs most of this checklist automatically on every push and pull request
+(`.github/workflows/ci.yml`): the tests with g++ and clang on Linux, Apple clang on macOS and
+MSYS2 g++ on Windows, in debug and release, with warnings as errors, plus the formatting check.
+A pull request is merged only when every job is green. The CI uses the clang-format of Ubuntu
+24.04 (version 18); another version may format a few lines differently.
 
 ## Code conventions
 
 - **Language:** everything in the code is in English: names, comments, error messages, test
   names and commit messages.
-- **Standard:** C++20, with no compiler extensions.
+- **Standard:** C++20. Compiler-specific features are allowed only where they bring a measured
+  gain, behind a portable form: `unsigned __int128` (with a portable fallback, tested against
+  it) and `[[gnu::...]]` attributes, which other compilers ignore.
 - **Formatting:** whatever `.clang-format` produces. Run `make format`; do not format by hand.
 - **Line endings:** CRLF in every text file. `.gitattributes` and `.clang-format` take care of it.
 - **Naming:** `PascalCase` for types, `snake_case` for functions and variables, `m_` prefix for

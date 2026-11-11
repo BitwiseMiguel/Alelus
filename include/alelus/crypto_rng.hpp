@@ -9,6 +9,7 @@
 
 #include "alelus/detail/chacha20_generator.hpp"
 #include "alelus/detail/uniform.hpp"
+#include "alelus/weighted_sampler.hpp"
 
 namespace alelus {
 
@@ -109,8 +110,7 @@ public:
     }
 
     /// Shuffles a sequence in place (std::vector, std::array, a C array, ...): every order is
-    /// equally likely. Unlike std::shuffle, the result for a given seed is the same on every
-    /// compiler and operating system.
+    /// equally likely.
     ///
     /// To shuffle only part of a vector, pass a std::span over that part. Only those positions
     /// change, and only among themselves:
@@ -133,6 +133,12 @@ public:
                  (!std::same_as<std::ranges::range_value_t<R>, bool>)
     std::size_t weighted_index(const R &weights) {
         return detail::weighted_index(*this, weights);
+    }
+
+    /// Picks an index using weights prepared once in a WeightedSampler: constant time, however
+    /// many weights there are. Use it when the same weights are used many times.
+    std::size_t weighted_index(const WeightedSampler &sampler) {
+        return detail::weighted_index(*this, sampler);
     }
 
     // Neither copyable nor movable: the secret state lives in exactly one place

@@ -1,7 +1,8 @@
 #include "alelus/detail/chacha20.hpp"
 
-#include <bit>
 #include <cstddef>
+
+#include "alelus/detail/secure_zero.hpp"
 
 namespace alelus::detail::chacha20 {
 
@@ -23,18 +24,12 @@ void store32_le(std::uint8_t *p, std::uint32_t v) noexcept {
 
 } // namespace
 
-void quarter_round(std::uint32_t &a, std::uint32_t &b, std::uint32_t &c,
-                   std::uint32_t &d) noexcept {
-    // Laid out exactly as in RFC 8439, section 2.1, so the two are easy to compare
-    // clang-format off
-    a += b; d ^= a; d = std::rotl(d, 16);
-    c += d; b ^= c; b = std::rotl(b, 12);
-    a += b; d ^= a; d = std::rotl(d, 8);
-    c += d; b ^= c; b = std::rotl(b, 7);
-    // clang-format on
-}
+namespace {
 
-Block block(const Key &key, std::uint32_t counter, const Nonce &nonce) noexcept {
+// Runs the block function and leaves the 16 output words in `out`. The initial state is a
+// copy of the key, so it is wiped before returning; the caller wipes `out` when done.
+void compute(const Key &key, std::uint32_t counter, const Nonce &nonce,
+             std::array<std::uint32_t, 16> &out) noexcept {
     // The initial state, as 16 words (RFC 8439, section 2.3):
     //   cccccccc  cccccccc  cccccccc  cccccccc     c = constant "expand 32-byte k"
     //   kkkkkkkk  kkkkkkkk  kkkkkkkk  kkkkkkkk     k = key
@@ -52,7 +47,8 @@ Block block(const Key &key, std::uint32_t counter, const Nonce &nonce) noexcept 
         state[13 + i] = load32_le(nonce.data() + 4 * i);
 
     // 20 rounds = 10 x (4 quarter rounds on the columns + 4 on the diagonals)
-    auto x = state;
+    auto &x = out;
+    x = state;
     for (int round = 0; round < 10; ++round) {
         quarter_round(x[0], x[4], x[8], x[12]); // columns
         quarter_round(x[1], x[5], x[9], x[13]);
@@ -66,10 +62,35 @@ Block block(const Key &key, std::uint32_t counter, const Nonce &nonce) noexcept 
 
     // Adding the initial state back makes the function impossible to run backwards:
     // without it, anyone could undo the rounds and recover the key from the output
+    for (std::size_t i = 0; i < 16; ++i)
+        x[i] += state[i];
+
+    // The state holds the key: it must not stay behind on the stack
+    secure_zero(state.data(), sizeof(state));
+}
+
+} // namespace
+
+Block block(const Key &key, std::uint32_t counter, const Nonce &nonce) noexcept {
+    std::array<std::uint32_t, 16> x;
+    compute(key, counter, nonce, x);
     Block out{};
     for (std::size_t i = 0; i < 16; ++i)
-        store32_le(out.data() + 4 * i, x[i] + state[i]);
+        store32_le(out.data() + 4 * i, x[i]);
+    secure_zero(x.data(), sizeof(x));
     return out;
+}
+
+void block_words(const Key &key, std::uint32_t counter, const Nonce &nonce,
+                 std::span<std::uint64_t, 8> out) noexcept {
+    std::array<std::uint32_t, 16> x;
+    compute(key, counter, nonce, x);
+    // Two 32-bit words, the first one in the low half: exactly what reading their 8 bytes
+    // as one little-endian number gives
+    for (std::size_t i = 0; i < 8; ++i)
+        out[i] =
+            static_cast<std::uint64_t>(x[2 * i]) | (static_cast<std::uint64_t>(x[2 * i + 1]) << 32);
+    secure_zero(x.data(), sizeof(x));
 }
 
 } // namespace alelus::detail::chacha20

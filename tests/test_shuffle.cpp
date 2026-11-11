@@ -22,10 +22,10 @@ using alelus::FastRNG;
 
 TEST_CASE("shuffle (algorithm)", "[shuffle]") {
     SECTION("Fisher-Yates, step by step") {
-        // {a, b, c}, from the end:
+        // {a, b, c}, from the end (x = 1 gives j = 0 for any small n, with Lemire):
         //   i = 3: j = uniform_below(3) = 0 -> swap positions 2 and 0 -> {c, b, a}
         //   i = 2: j = uniform_below(2) = 0 -> swap positions 1 and 0 -> {b, c, a}
-        ScriptedRng rng{0, 0};
+        ScriptedRng rng{1, 1};
         std::string s = "abc";
         alelus::detail::shuffle(rng, s);
         CHECK(s == "bca");

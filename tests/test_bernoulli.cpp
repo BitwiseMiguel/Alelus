@@ -43,11 +43,14 @@ TEST_CASE("bernoulli (algorithm)", "[bernoulli]") {
     }
 
     SECTION("k / n: true exactly when uniform_int in [0, n) < k") {
-        // n = 3 uses the mask 0b11; 3 is rejected and drawn again
-        ScriptedRng rng{0, 2, 3, 1};
-        CHECK(alelus::detail::bernoulli(rng, 1, 3));       // 0 < 1
-        CHECK_FALSE(alelus::detail::bernoulli(rng, 1, 3)); // 2 < 1 is false
-        CHECK_FALSE(alelus::detail::bernoulli(rng, 1, 3)); // 3 rejected, then 1 < 1 is false
+        // n = 3 (Lemire, 2^64 mod 3 = 1):
+        //   x = 2^62 -> 0, and 0 < 1 is true
+        //   x = max  -> 2, and 2 < 1 is false
+        //   x = 0    -> rejected; then x = 2^63 -> 1, and 1 < 1 is false
+        ScriptedRng rng{0x4000000000000000ULL, UINT64_MAX, 0, 0x8000000000000000ULL};
+        CHECK(alelus::detail::bernoulli(rng, 1, 3));
+        CHECK_FALSE(alelus::detail::bernoulli(rng, 1, 3));
+        CHECK_FALSE(alelus::detail::bernoulli(rng, 1, 3));
         CHECK(rng.consumed() == 4);
     }
 }

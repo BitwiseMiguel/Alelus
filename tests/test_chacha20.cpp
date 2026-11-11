@@ -3,6 +3,7 @@
 #include "alelus/detail/chacha20.hpp"
 #include "support/hex.hpp"
 
+#include <array>
 #include <bit>
 #include <cstdint>
 
@@ -90,5 +91,23 @@ TEST_CASE("ChaCha20: block function", "[chacha20]") {
         // 512 bits: expect about 256. 200..312 is about 5 standard deviations either side.
         CHECK(different_bits > 200);
         CHECK(different_bits < 312);
+    }
+
+    SECTION("block_words gives the same bits as block, read as little-endian numbers") {
+        cc::Key key{};
+        for (std::size_t i = 0; i < key.size(); ++i)
+            key[i] = static_cast<std::uint8_t>(i);
+        const cc::Nonce nonce{0, 0, 0, 9, 0, 0, 0, 0x4a, 0, 0, 0, 0};
+        for (std::uint32_t counter : {0u, 1u, 0xffffffffu}) {
+            const cc::Block bytes = cc::block(key, counter, nonce);
+            std::array<std::uint64_t, 8> words{};
+            cc::block_words(key, counter, nonce, words);
+            for (std::size_t i = 0; i < 8; ++i) {
+                std::uint64_t expected = 0;
+                for (std::size_t j = 0; j < 8; ++j)
+                    expected |= static_cast<std::uint64_t>(bytes[8 * i + j]) << (8 * j);
+                CHECK(words[i] == expected);
+            }
+        }
     }
 }
