@@ -9,6 +9,7 @@
 
 #include "alelus/detail/chacha20_generator.hpp"
 #include "alelus/detail/uniform.hpp"
+#include "alelus/weighted_sampler.hpp"
 
 namespace alelus {
 
@@ -133,6 +134,12 @@ public:
                  (!std::same_as<std::ranges::range_value_t<R>, bool>)
     std::size_t weighted_index(const R &weights) {
         return detail::weighted_index(*this, weights);
+    }
+
+    /// Picks an index using weights prepared once in a WeightedSampler: constant time, however
+    /// many weights there are. Use it when the same weights are used many times.
+    std::size_t weighted_index(const WeightedSampler &sampler) {
+        return detail::weighted_index(*this, sampler);
     }
 
     // Neither copyable nor movable: the secret state lives in exactly one place

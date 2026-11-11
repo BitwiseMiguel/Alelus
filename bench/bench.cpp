@@ -157,6 +157,17 @@ int main(int argc, char **argv) {
         bench("FastRNG weighted_index(100 weights)",
               [&] { consume(fast.weighted_index(hundred)); });
         bench("CryptoRNG weighted_index(4 weights)", [&] { consume(crypto.weighted_index(four)); });
+
+        const alelus::WeightedSampler four_prepared(four);
+        const alelus::WeightedSampler hundred_prepared(hundred);
+        bench("FastRNG weighted_index(WeightedSampler, 4 weights)",
+              [&] { consume(fast.weighted_index(four_prepared)); });
+        bench("FastRNG weighted_index(WeightedSampler, 100 weights)",
+              [&] { consume(fast.weighted_index(hundred_prepared)); });
+        bench("WeightedSampler construction (100 weights)", [&] {
+            const alelus::WeightedSampler s(hundred);
+            consume(s.size());
+        });
     }
 
     if (g_measured == 0)

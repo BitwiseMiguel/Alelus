@@ -9,6 +9,7 @@
 #include <initializer_list>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 class ScriptedRng {
@@ -22,6 +23,9 @@ public:
     }
 
     ScriptedRng(std::initializer_list<std::uint64_t> values) : m_values(values) {
+    }
+
+    explicit ScriptedRng(std::vector<std::uint64_t> values) : m_values(std::move(values)) {
     }
 
     result_type operator()() {
