@@ -111,9 +111,9 @@ int main(int argc, char **argv) {
         bench("std::uniform_int_distribution(1, 6) + FastRNG", [&] { consume(die(fast)); });
         bench("std::uniform_int_distribution(1, 6) + mt19937_64", [&] { consume(die(mt)); });
     }
-    // n = 2^32 + 1 is the worst case for the bitmask: the mask has 33 bits, so almost half
-    // of the draws are rejected
-    bench("FastRNG uniform_int(2^32 + 1) [bitmask worst case]",
+    // n = 2^32 + 1 was the worst case of the old bitmask algorithm (almost half of the draws
+    // rejected). Kept to show that Lemire's method has no such case.
+    bench("FastRNG uniform_int(2^32 + 1)",
           [&] { consume(fast.uniform_int(std::uint64_t{0x100000001})); });
 
     section("uniform_real");

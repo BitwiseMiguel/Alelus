@@ -22,27 +22,56 @@ static_assert(Random64<CryptoRNG>);
 static_assert(Random64<ScriptedRng>);
 static_assert(!Random64<std::mt19937>); // only 32 bits per call: not accepted
 
-TEST_CASE("uniform_below (bitmask algorithm)", "[uniform]") {
-    // These tests use a scripted generator to see exactly which numbers are consumed
+TEST_CASE("uniform_below (Lemire's algorithm)", "[uniform]") {
+    // These tests use a scripted generator to see exactly which numbers are consumed.
+    // Expected values computed independently in Python with exact integers.
 
-    SECTION("rejects values above the range and draws again") {
-        // n = 6 -> mask 0b111 (values 0..7). 7 and 6 are rejected, 5 is accepted.
-        ScriptedRng rng{7, 6, 5};
+    SECTION("the result is the high half of x * n") {
+        // x = 2^62, n = 6: x * 6 = 1.5 * 2^64 -> high half 1, low half 2^63 (accepted)
+        ScriptedRng rng{0x4000000000000000ULL};
+        CHECK(alelus::detail::uniform_below(rng, 6) == 1);
+        CHECK(rng.consumed() == 1);
+    }
+
+    SECTION("rejects when the low half is below 2^64 mod n") {
+        // n = 6, 2^64 mod 6 = 4:
+        //   x = 0    -> x * 6 = 0:              low half 0 < 4, rejected
+        //   x = 2^63 -> x * 6 = 3 * 2^64:       low half 0 < 4, rejected
+        //   x = max  -> x * 6 = 6 * 2^64 - 6:   high half 5, accepted
+        ScriptedRng rng{0, 0x8000000000000000ULL, UINT64_MAX};
         CHECK(alelus::detail::uniform_below(rng, 6) == 5);
         CHECK(rng.consumed() == 3);
     }
 
-    SECTION("ignores the bits above the mask") {
-        ScriptedRng rng{0xFFFFFFFFFFFFFFF8ULL}; // the 3 low bits are 0
-        CHECK(alelus::detail::uniform_below(rng, 6) == 0);
-        CHECK(rng.consumed() == 1);
+    SECTION("huge ranges") {
+        // n = 2^63 + 1, 2^64 mod n = 2^63 - 1:
+        //   x = 2 -> x * n = 2^64 + 2: low half 2 < 2^63 - 1, rejected
+        //   x = 1 -> x * n = 2^63 + 1: high half 0, accepted
+        ScriptedRng rng{2, 1};
+        CHECK(alelus::detail::uniform_below(rng, 0x8000000000000001ULL) == 0);
+        CHECK(rng.consumed() == 2);
     }
 
-    SECTION("huge ranges") {
-        // n = 2^63 + 1 -> the mask keeps all 64 bits; anything above 2^63 is rejected
-        ScriptedRng rng{UINT64_MAX, 0x8000000000000000ULL};
-        CHECK(alelus::detail::uniform_below(rng, 0x8000000000000001ULL) == 0x8000000000000000ULL);
-        CHECK(rng.consumed() == 2);
+    SECTION("almost never needs a second number") {
+        // Counts the draws for 100000 dice: a rejection happens with probability 4 / 2^64
+        struct Counting {
+            using result_type = std::uint64_t;
+            static constexpr result_type min() {
+                return 0;
+            }
+            static constexpr result_type max() {
+                return UINT64_MAX;
+            }
+            FastRNG inner{9};
+            std::uint64_t calls = 0;
+            result_type operator()() {
+                ++calls;
+                return inner();
+            }
+        } rng;
+        for (int i = 0; i < 100000; ++i)
+            (void)alelus::detail::uniform_below(rng, 6);
+        CHECK(rng.calls == 100000);
     }
 
     SECTION("the full 64-bit range uses one draw, unchanged") {

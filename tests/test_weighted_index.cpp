@@ -15,22 +15,24 @@ using alelus::CryptoRNG;
 using alelus::FastRNG;
 
 TEST_CASE("weighted_index (algorithm)", "[weighted]") {
-    // weights {2, 3}: total 5, so r = uniform_below(5) (mask 0b111).
+    // weights {2, 3}: total 5, so r = uniform_below(5).
     // Values 0 and 1 belong to index 0; values 2, 3 and 4 belong to index 1.
+    // With Lemire's algorithm, x gives r = floor(x * 5 / 2^64), and 2^64 mod 5 = 1.
     const std::vector<std::uint64_t> weights{2, 3};
 
     SECTION("r inside the first block gives index 0") {
-        ScriptedRng rng{1};
+        ScriptedRng rng{0x4CCCCCCCCCCCCCCCULL}; // about 0.3 * 2^64 -> r = 1
         CHECK(alelus::detail::weighted_index(rng, weights) == 0);
     }
 
     SECTION("r at the start of the second block gives index 1") {
-        ScriptedRng rng{2};
+        ScriptedRng rng{0x8000000000000000ULL}; // 0.5 * 2^64 -> r = 2
         CHECK(alelus::detail::weighted_index(rng, weights) == 1);
     }
 
-    SECTION("r = 7 is outside [0, 5): rejected by uniform_below, then 4 gives index 1") {
-        ScriptedRng rng{7, 4};
+    SECTION("a rejected draw is replaced before choosing") {
+        // x = 0 has low half 0 < 2^64 mod 5 = 1: rejected. Then x = 2^63 -> r = 2 -> index 1.
+        ScriptedRng rng{0, 0x8000000000000000ULL};
         CHECK(alelus::detail::weighted_index(rng, weights) == 1);
         CHECK(rng.consumed() == 2);
     }
