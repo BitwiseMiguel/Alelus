@@ -41,4 +41,5 @@ inline double chi_square(const std::vector<std::uint64_t> &observed,
 // Critical values of the chi-square distribution for p = 0.001, by degrees of freedom
 // (number of categories - 1). Source: standard chi-square tables.
 inline constexpr double CHI2_CRITICAL_P001_DF1 = 10.828;
+inline constexpr double CHI2_CRITICAL_P001_DF3 = 16.266;
 inline constexpr double CHI2_CRITICAL_P001_DF5 = 20.515;
