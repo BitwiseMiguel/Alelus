@@ -42,7 +42,7 @@ Run `make dist`, copy `dist/alelus/` into your project, and compile with:
 g++ -std=c++20 -I alelus/include main.cpp alelus/lib/libalelus.a
 ```
 
-On Windows, add `-lbcrypt` at the end.
+On Windows, add `-lbcrypt` at the end; on Linux and macOS, add `-pthread`.
 
 ## Project layout
 
