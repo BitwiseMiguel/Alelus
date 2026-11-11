@@ -6,12 +6,18 @@
 #include <limits>
 #include <stdexcept>
 
+#include "alelus/os_entropy.hpp"
 #include "alelus/splitmix64.hpp"
 
 namespace alelus {
 
-/// Fast generator, reproducible from its state. Not suitable for cryptography.
+/// Fast generator. Not suitable for cryptography.
 /// Algorithm: xoshiro256** 1.0 (Blackman & Vigna, 2018), https://prng.di.unimi.it/
+///
+/// - With a seed, FastRNG(seed): the sequence can be repeated. Use it for simulations
+///   that must be reproducible.
+/// - Without a seed, FastRNG(): the 256 bits of state come from the operating system and
+///   the sequence is different every time. Use it when repeating is not wanted.
 class FastRNG {
 public:
     /// 256 bits of state, as four 64-bit words.
@@ -39,6 +45,17 @@ public:
         return next();
     }
     // -------------------------------------------------------------------------------
+
+    /// Gets all 256 bits of state from the operating system, so the sequence is different
+    /// every time. Throws std::runtime_error if the operating system cannot provide them.
+    FastRNG() : m_state{} {
+        os_random_bytes({reinterpret_cast<std::uint8_t *>(m_state.data()), sizeof(m_state)});
+
+        // 256 random bits are all zero with probability 2^-256: if it happens, the entropy
+        // source is broken. Retrying would risk an endless loop, so report it instead.
+        if ((m_state[0] | m_state[1] | m_state[2] | m_state[3]) == 0)
+            throw std::runtime_error("FastRNG: the operating system returned only zeros");
+    }
 
     /// Starts from the given state.
     /// Throws std::invalid_argument if every word is zero: xoshiro256** would then

@@ -30,8 +30,19 @@ A C++20 random number library with two generators:
 ```sh
 make             # build the library
 make tests       # build and run the tests
+make dist        # package headers + release library in dist/alelus/
 make help        # all targets and options
 ```
+
+## Using Alelus in another project
+
+Run `make dist`, copy `dist/alelus/` into your project, and compile with:
+
+```sh
+g++ -std=c++20 -I alelus/include main.cpp alelus/lib/libalelus.a
+```
+
+On Windows, add `-lbcrypt` at the end.
 
 ## Project layout
 
