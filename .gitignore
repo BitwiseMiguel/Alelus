@@ -1,0 +1,51 @@
+# --- Build output of this project --------------------------------------------
+# Everything the Makefile produces goes into build/ (objects, dependency files,
+# the library and the test program), so deleting it is always safe.
+/build/
+
+# --- Compiler output, in case something is built outside build/ -------------
+# Object files
+*.o
+*.obj
+# Dependency files written by -MMD
+*.d
+# Precompiled headers
+*.gch
+*.pch
+# Static and shared libraries
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+# Executables and debug symbols
+*.exe
+*.out
+*.app
+*.pdb
+*.ilk
+*.dSYM/
+
+# --- Tools --------------------------------------------------------------------
+# Raw output from random-number tests (PractRand and similar) can be huge
+*.bin
+# Profiling and coverage
+gmon.out
+*.gcno
+*.gcda
+*.gcov
+perf.data*
+
+# --- Editors and IDEs ---------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+.cache/
+compile_commands.json
+
+# --- Operating systems --------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

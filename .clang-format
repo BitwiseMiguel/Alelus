@@ -1,0 +1,161 @@
+# Complete .clang-format with comments
+# Note: This file lists almost all options supported by clang-format.
+# Each field has a comment explaining what it does and the allowed values.
+# Some options may vary depending on the clang-format version.
+
+# Base style from which all other options inherit
+BasedOnStyle: LLVM  # Values: LLVM, Google, Chromium, Mozilla, WebKit, Microsoft, GNU
+
+# --- GENERAL ---
+Language: Cpp  # Target language. Values: Cpp, CSharp, Java, JavaScript, Proto, TableGen, TextProto
+AccessModifierOffset: -4  # Relative indentation for public:/private:/protected:
+AlignAfterOpenBracket: Align  # Values: Align, DontAlign, AlwaysBreak
+AlignArrayOfStructures: None  # Values: None, Left, Right
+AlignConsecutiveAssignments: None  # Values: None, Consecutive, AcrossEmptyLines, AcrossComments
+AlignConsecutiveBitFields: None  # Same values as above
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: DontAlign  # Values: DontAlign, Left, Right
+AlignOperands: Align  # Values: DontAlign, Align, AlignAfterOperator
+AlignTrailingComments: true  # Align trailing comments
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Never  # Values: Never, Empty, Inline, Always
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None  # Values: None, Empty, Inline, All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None  # Values: None, All, TopLevel, AllDefinitions
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes  # Values: No, MultiLine, Yes
+BinPackArguments: true
+BinPackParameters: true
+BitFieldColonSpacing: Both  # Values: Both, None, Before, After
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never  # Values: Never, MultiLine, Always
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+
+BreakBeforeBinaryOperators: None  # Values: None, NonAssignment, All
+BreakBeforeBraces: Attach  # Values: Attach, Linux, Mozilla, Stroustrup, Allman, WebKit, Custom
+BreakBeforeConceptDeclarations: Always  # Values: Always, Never
+BreakBeforeInheritanceComma: false
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon  # Values: BeforeColon, BeforeComma, AfterColon
+BreakInheritanceList: BeforeColon
+ColumnLimit: 100  # Maximum line length
+CommentPragmas: ''
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+DeriveLineEnding: true
+DerivePointerAlignment: false
+DisableFormat: false
+EmptyLineAfterAccessModifier: Never  # Values: Empty, Never, Leave
+EmptyLineBeforeAccessModifier: LogicalBlock  # Values: LogicalBlock, Always, Never
+ExperimentalAutoDetectBinPacking: false
+FixNamespaceComments: true
+ForEachMacros: []
+IncludeBlocks: Preserve  # Values: Preserve, Merge, Regroup
+IncludeCategories:
+  - Regex: ".*"
+    Priority: 1
+IncludeIsMainRegex: ''
+IncludeIsMainSourceRegex: ''
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: AfterExternBlock  # Values: AfterExternBlock, NoIndent, Indent
+IndentGotoLabels: true
+IndentPPDirectives: None  # Values: None, AfterHash, BeforeHash
+IndentRequires: true
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+
+InsertBraces: false
+InsertTrailingCommas: None  # Values: None, Wrapped, Always
+IntegerLiteralSeparator:
+  Binary: 0
+  Decimal: 0
+  Hex: 0
+
+JavaScriptQuotes: Leave  # Values: Leave, Single, Double
+JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+LambdaBodyIndentation: Signature  # Values: OuterScope, Signature
+LineEnding: LF  # LF, CRLF, CR
+MacroBlockBegin: ''
+MacroBlockEnd: ''
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None  # Values: None, Inner, All
+NamespaceMacros: []
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 10000
+PenaltyReturnTypeOnItsOwnLine: 60
+PointerAlignment: Right  # Values: Left, Right, Middle
+PPIndentWidth: 2
+QualifierAlignment: Leave  # Values: Leave, Left, Right, Custom
+ReferenceAlignment: Pointer  # Values: Pointer, Left, Right, Middle
+ReflowComments: true
+RemoveBracesLLVM: false
+RemoveSemicolon: false
+RequiresClausePosition: OwnLine  # Values: OwnLine, WithPreceding, WithFollowing
+RequiresExpressionIndentation: OuterScope  # Values: OuterScope, InnerScope
+ShortNamespaceLines: 1
+SortIncludes: true
+SortJavaStaticImport: Before  # Values: Before, After
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements  # Values: Never, ControlStatements, Always
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterOverloadedOperator: false
+  BeforeNonEmptyParentheses: false
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: true
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: Auto  # Values: Auto, Cpp03, Cpp11, Cpp14, Cpp17, Cpp20, Latest
+StatementAttributeLikeMacros: []
+StatementMacros: []
+TabWidth: 8
+TypenameMacros: []
+UseTab: Never  # Values: Never, ForIndentation, ForContinuationAndIndentation, Always
+WhitespaceSensitiveMacros: []

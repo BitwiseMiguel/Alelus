@@ -1,0 +1,50 @@
+# Alelus
+
+A C++20 random number library with two generators:
+
+| | `FastRNG` | `CryptoRNG` |
+|---|---|---|
+| Algorithm | xoshiro256** (Blackman & Vigna) | ChaCha20 (RFC 8439) |
+| Reproducible from a seed | Yes | No: keyed from the operating system |
+| Use it for | Simulation, Monte Carlo, testing | When unpredictability matters |
+
+> **Status: work in progress.** The project is being built incrementally and nothing is
+> usable yet. This README describes the goal and will be updated as features land.
+
+## Goals
+
+- Both generators satisfy `std::uniform_random_bit_generator`, so they work with the
+  standard library (`std::shuffle`, `<random>` distributions) as well as with Alelus.
+- Exactly uniform integers and reals, with no modulo bias.
+- Every algorithm validated against published test vectors or independent references.
+- Builds with `make` on Linux, macOS and Windows (MSYS2 or Git Bash with MinGW).
+
+## Requirements
+
+- A C++20 compiler: g++ 11 or newer, or clang++ 14 or newer
+- GNU `make`
+- Optional: `clang-format`, to format the code (`make format`)
+
+## Building
+
+```sh
+make             # build the library
+make tests       # build and run the tests
+make help        # all targets and options
+```
+
+## Project layout
+
+```
+include/alelus/   public headers
+src/              library sources
+tests/            unit tests (Catch2)
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
