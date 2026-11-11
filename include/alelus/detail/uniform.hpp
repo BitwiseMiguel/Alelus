@@ -4,8 +4,10 @@
 #include <cmath>
 #include <concepts>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <random>
+#include <ranges>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -128,6 +130,23 @@ bool bernoulli(Rng &rng, K k, N n) {
     if (std::cmp_less_equal(n, 0) || std::cmp_less(k, 0) || std::cmp_greater(k, n))
         throw std::invalid_argument("bernoulli: requires n > 0 and 0 <= k <= n");
     return uniform_below(rng, static_cast<std::uint64_t>(n)) < static_cast<std::uint64_t>(k);
+}
+
+/// Shuffles a sequence in place: every one of the n! orders is equally likely.
+///
+/// Algorithm: Fisher-Yates, from the end to the start. Position i - 1 receives an element
+/// chosen uniformly among positions 0..i - 1 (itself included), and is then left alone.
+/// That gives n * (n - 1) * ... * 1 = n! equally likely paths, one per order.
+template <Random64 Rng, std::ranges::random_access_range R>
+    requires std::permutable<std::ranges::iterator_t<R>>
+void shuffle(Rng &rng, R &&range) {
+    const auto first = std::ranges::begin(range);
+    const auto size = static_cast<std::uint64_t>(std::ranges::distance(range));
+    using Diff = std::ranges::range_difference_t<R>;
+    for (std::uint64_t i = size; i > 1; --i) {
+        const std::uint64_t j = uniform_below(rng, i); // in [0, i - 1]
+        std::ranges::iter_swap(first + static_cast<Diff>(i - 1), first + static_cast<Diff>(j));
+    }
 }
 
 /// Marks "no result type was given": use the common type of the two arguments.

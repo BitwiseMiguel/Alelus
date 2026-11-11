@@ -5,6 +5,7 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 
 #include "alelus/detail/uniform.hpp"
@@ -158,6 +159,20 @@ public:
         requires(!std::same_as<K, bool> && !std::same_as<N, bool>)
     bool bernoulli(K k, N n) {
         return detail::bernoulli(*this, k, n);
+    }
+
+    /// Shuffles a sequence in place (std::vector, std::array, a C array, ...): every order is
+    /// equally likely. Unlike std::shuffle, the result for a given seed is the same on every
+    /// compiler and operating system.
+    ///
+    /// To shuffle only part of a vector, pass a std::span over that part. Only those positions
+    /// change, and only among themselves:
+    ///     rng.shuffle(std::span(v).subspan(2));     // from the 3rd element to the end
+    ///     rng.shuffle(std::span(v).subspan(2, 5));  // 5 elements, starting at the 3rd
+    template <std::ranges::random_access_range R>
+        requires std::permutable<std::ranges::iterator_t<R>>
+    void shuffle(R &&range) {
+        detail::shuffle(*this, range);
     }
 
     /// Advances n steps without returning anything, like the standard library engines.
