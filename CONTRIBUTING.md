@@ -24,18 +24,24 @@ Every change must pass this checklist:
       passes.
 - [ ] It also builds with the other compiler: `make clean && make tests WERROR=1 CXX=clang++`
       (or `CXX=g++` if you normally use clang).
+- [ ] The tests pass under the sanitizers: `make tests SANITIZE=1` (Linux or macOS; MinGW on
+      Windows does not support them). They stop at the first memory error or undefined
+      behaviour, and print the line where it happened.
 - [ ] `make format` leaves no changes (`git diff` is empty after running it).
 - [ ] New behaviour has tests, and fixed bugs have a test that failed before the fix.
 - [ ] Public functions and classes have a short comment explaining what they do.
 - [ ] Changes made for speed include `make bench` numbers from before and after, with both
       compilers. Differences of 1 to 2 ns are within the noise.
-- [ ] If the change affects how the library is used, `README.md` is updated.
+- [ ] If the change affects how the library is used, `README.md` and `examples/` are updated,
+      and `make examples` and `make check-docs` pass. The first example in the README must
+      be `examples/quick_start.cpp`, character for character.
 
 GitHub Actions runs most of this checklist automatically on every push and pull request
-(`.github/workflows/ci.yml`): the tests with g++ and clang on Linux, Apple clang on macOS and
-MSYS2 g++ on Windows, in debug and release, with warnings as errors, plus the formatting check.
-A pull request is merged only when every job is green. The CI uses the clang-format of Ubuntu
-24.04 (version 18); another version may format a few lines differently.
+(`.github/workflows/ci.yml`): the tests and the examples with g++ and clang on Linux, Apple
+clang on macOS and MSYS2 g++ on Windows, in debug and release, with warnings as errors; the
+same under the sanitizers on Linux; and the formatting and README checks. A pull request is
+merged only when every job is green. The CI uses the clang-format of Ubuntu 24.04 (version
+18); another version may format a few lines differently.
 
 ## Code conventions
 

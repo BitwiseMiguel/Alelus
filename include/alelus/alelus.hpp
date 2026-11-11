@@ -6,4 +6,5 @@
 #include "alelus/fast_rng.hpp"
 #include "alelus/os_entropy.hpp"
 #include "alelus/splitmix64.hpp"
+#include "alelus/version.hpp"
 #include "alelus/weighted_sampler.hpp"
