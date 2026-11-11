@@ -43,3 +43,45 @@ TEST_CASE("FastRNG: construction", "[fast]") {
         CHECK_NOTHROW(FastRNG({0x8000000000000000ULL, 0, 0, 0}));
     }
 }
+
+TEST_CASE("FastRNG: next()", "[fast]") {
+    FastRNG rng({1, 2, 3, 4});
+
+    SECTION("reproduces the reference implementation") {
+        // Outputs of the authors' C implementation (xoshiro256starstar.c) from the same state
+        CHECK(rng.next() == 0x0000000000002d00ULL);
+        CHECK(rng.next() == 0x0000000000000000ULL);
+        CHECK(rng.next() == 0x000000005a007080ULL);
+        CHECK(rng.next() == 0x10e0000000009d80ULL);
+        CHECK(rng.next() == 0x10e0b61ce1009d80ULL);
+        CHECK(rng.next() == 0x0870021ce143ad00ULL);
+    }
+
+    SECTION("advances the state as the algorithm describes") {
+        // Work this out by hand before reading the expected value
+        (void)rng.next();
+        const FastRNG::State expected{7, 0, 0x40002, 0x0000c00000000000ULL};
+        CHECK(rng.state() == expected);
+    }
+
+    SECTION("a copy continues the same sequence") {
+        (void)rng.next();
+        FastRNG copy = rng;
+        for (int i = 0; i < 1000; ++i)
+            REQUIRE(copy.next() == rng.next());
+    }
+
+    SECTION("a difference in the last word takes two outputs to show") {
+        // The first output depends only on s[1], and the second one does not see s[3] yet.
+        // So two states that differ only in s[3] start with the same two outputs, and only
+        // then diverge. This is why the state should come from a well-mixed seed.
+        FastRNG other({1, 2, 3, 5});
+        CHECK(other.next() == rng.next());
+        CHECK(other.next() == rng.next());
+
+        int equal = 0;
+        for (int i = 0; i < 1000; ++i)
+            equal += (other.next() == rng.next());
+        CHECK(equal == 0);
+    }
+}
