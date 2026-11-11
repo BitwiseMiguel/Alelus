@@ -3,6 +3,7 @@
 #include <bit>
 #include <cmath>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
@@ -147,6 +148,46 @@ void shuffle(Rng &rng, R &&range) {
         const std::uint64_t j = uniform_below(rng, i); // in [0, i - 1]
         std::ranges::iter_swap(first + static_cast<Diff>(i - 1), first + static_cast<Diff>(j));
     }
+}
+
+/// Picks an index with probability proportional to its integer weight:
+///     P(i) = weights[i] / (sum of all weights)
+/// It is exact: only integers are involved, so {1, 2} gives exactly 1/3 and 2/3.
+///
+/// Algorithm: draw r uniformly in [0, total), then walk the weights subtracting each one;
+/// the index where r falls below the current weight is the answer. Each index owns a block
+/// of exactly weights[i] values of r.
+///
+/// Throws std::invalid_argument if a weight is negative or the total is 0 (including an
+/// empty list), and std::overflow_error if the total does not fit in 64 bits.
+template <Random64 Rng, std::ranges::forward_range R>
+    requires std::integral<std::ranges::range_value_t<R>> &&
+             (!std::same_as<std::ranges::range_value_t<R>, bool>)
+std::size_t weighted_index(Rng &rng, const R &weights) {
+    std::uint64_t total = 0;
+    for (const auto w : weights) {
+        if (std::cmp_less(w, 0))
+            throw std::invalid_argument("weighted_index: weights must not be negative");
+        const auto weight = static_cast<std::uint64_t>(w);
+        if (weight > std::numeric_limits<std::uint64_t>::max() - total)
+            throw std::overflow_error(
+                "weighted_index: the sum of the weights does not fit in 64 bits");
+        total += weight;
+    }
+    if (total == 0)
+        throw std::invalid_argument(
+            "weighted_index: the sum of the weights must be greater than zero");
+
+    std::uint64_t r = uniform_below(rng, total);
+    std::size_t index = 0;
+    for (const auto w : weights) {
+        const auto weight = static_cast<std::uint64_t>(w);
+        if (r < weight)
+            return index;
+        r -= weight;
+        ++index;
+    }
+    return index; // never reached: r < total guarantees a return inside the loop
 }
 
 /// Marks "no result type was given": use the common type of the two arguments.

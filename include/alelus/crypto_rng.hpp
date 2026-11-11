@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <ranges>
@@ -119,6 +120,19 @@ public:
         requires std::permutable<std::ranges::iterator_t<R>>
     void shuffle(R &&range) {
         detail::shuffle(*this, range);
+    }
+
+    /// Picks an index with probability proportional to its integer weight, exactly. For
+    /// example, with the weights {60, 30, 10} index 0 comes out 60% of the time, index 1 30%
+    /// and index 2 10%. Weights can be in any container of integers. A weight of 0 is never
+    /// picked.
+    /// Throws std::invalid_argument if a weight is negative or they are all 0 (or there are
+    /// none), and std::overflow_error if their sum does not fit in 64 bits.
+    template <std::ranges::forward_range R>
+        requires std::integral<std::ranges::range_value_t<R>> &&
+                 (!std::same_as<std::ranges::range_value_t<R>, bool>)
+    std::size_t weighted_index(const R &weights) {
+        return detail::weighted_index(*this, weights);
     }
 
     // Neither copyable nor movable: the secret state lives in exactly one place
