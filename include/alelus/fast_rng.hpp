@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include "alelus/splitmix64.hpp"
+
 namespace alelus {
 
 /// Fast generator, reproducible from its state. Not suitable for cryptography.
@@ -20,6 +22,12 @@ public:
     explicit FastRNG(const State &state) : m_state(state) {
         if ((m_state[0] | m_state[1] | m_state[2] | m_state[3]) == 0)
             throw std::invalid_argument("FastRNG: the all-zero state is invalid");
+    }
+
+    /// Starts from a 64-bit seed. SplitMix64 expands it into the 256 bits of state, so that
+    /// similar seeds (1, 2, 3, ...) still give completely different states.
+    /// No zero check is needed: SplitMix64 never returns four zeros in a row.
+    explicit FastRNG(std::uint64_t seed) noexcept : m_state(expand_seed(seed)) {
     }
 
     /// Returns the next 64 random bits and advances the state.
@@ -45,6 +53,12 @@ public:
     }
 
 private:
+    static State expand_seed(std::uint64_t seed) noexcept {
+        SplitMix64 sm(seed);
+        // Inside braces, C++ guarantees left-to-right evaluation: the four calls happen in order
+        return State{sm.next(), sm.next(), sm.next(), sm.next()};
+    }
+
     State m_state;
 };
 
