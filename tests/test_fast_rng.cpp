@@ -22,6 +22,9 @@ using alelus::FastRNG;
 static_assert(std::is_copy_constructible_v<FastRNG>);
 static_assert(std::is_copy_assignable_v<FastRNG>);
 
+// FastRNG() exists: without a seed, the state comes from the operating system
+static_assert(std::is_default_constructible_v<FastRNG>);
+
 // "explicit": a State does not silently turn into a FastRNG
 static_assert(!std::is_convertible_v<FastRNG::State, FastRNG>);
 
@@ -237,5 +240,29 @@ TEST_CASE("FastRNG: jump() and long_jump()", "[fast][jump]") {
         for (int i = 0; i < 10000; ++i)
             repeated += static_cast<int>(seen.count(thread1.next()));
         CHECK(repeated == 0);
+    }
+}
+
+TEST_CASE("FastRNG: seeding from the operating system", "[fast]") {
+    // Not deterministic: the state is real entropy. The checks below can only fail by
+    // chance with a probability far below 1 in a billion.
+
+    SECTION("two generators get different states") {
+        const FastRNG a, b;
+        CHECK(a != b);
+    }
+
+    SECTION("the state is never all zero") {
+        const FastRNG rng;
+        const FastRNG::State zero{0, 0, 0, 0};
+        CHECK(rng.state() != zero);
+    }
+
+    SECTION("two generators give different sequences") {
+        FastRNG a, b;
+        int equal = 0;
+        for (int i = 0; i < 1000; ++i)
+            equal += (a.next() == b.next());
+        CHECK(equal == 0);
     }
 }
