@@ -2,8 +2,14 @@
 
 #include "alelus/fast_rng.hpp"
 
+#include <algorithm>
+#include <concepts>
+#include <cstdint>
+#include <numeric>
+#include <random>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 using alelus::FastRNG;
 
@@ -17,6 +23,13 @@ static_assert(std::is_copy_assignable_v<FastRNG>);
 
 // "explicit": a State does not silently turn into a FastRNG
 static_assert(!std::is_convertible_v<FastRNG::State, FastRNG>);
+
+// FastRNG satisfies the standard library's generator concept. If any of result_type, min(),
+// max() or operator() is missing or wrong, this does not compile.
+static_assert(std::uniform_random_bit_generator<FastRNG>);
+static_assert(std::same_as<FastRNG::result_type, std::uint64_t>);
+static_assert(FastRNG::min() == 0);
+static_assert(FastRNG::max() == UINT64_MAX);
 
 TEST_CASE("FastRNG: construction", "[fast]") {
     // Catch2 runs this TEST_CASE once for each SECTION, from the top. Code here, before
@@ -126,5 +139,53 @@ TEST_CASE("FastRNG: seeding", "[fast]") {
         for (int i = 0; i < 1000; ++i)
             equal += (a.next() == b.next());
         CHECK(equal == 0);
+    }
+}
+
+TEST_CASE("FastRNG: standard library compatibility", "[fast]") {
+    SECTION("operator() is the same as next()") {
+        FastRNG a(7), b(7);
+        for (int i = 0; i < 100; ++i)
+            REQUIRE(a() == b.next());
+    }
+
+    SECTION("discard(n) skips n numbers") {
+        FastRNG a(42), b(42);
+        a.discard(3);
+        (void)b.next();
+        (void)b.next();
+        (void)b.next();
+        CHECK(a == b);
+        CHECK(a.next() == 0xecb8ad4703b360a1ULL); // fourth value of seed 42 (see "seeding")
+    }
+
+    SECTION("operator== compares the state") {
+        FastRNG a(1), b(1), c(2);
+        CHECK(a == b);
+        CHECK(a != c); // != comes for free from == in C++20
+        (void)a.next();
+        CHECK(a != b);
+    }
+
+    SECTION("std::shuffle gives the same result for the same seed") {
+        std::vector<int> original(52);
+        std::iota(original.begin(), original.end(), 0); // 0, 1, 2, ..., 51
+        std::vector<int> v1 = original, v2 = original;
+
+        FastRNG g1(2026), g2(2026);
+        std::shuffle(v1.begin(), v1.end(), g1);
+        std::shuffle(v2.begin(), v2.end(), g2);
+        CHECK(v1 == v2);       // same seed, same shuffle
+        CHECK(v1 != original); // and it really shuffled (with a fixed seed this is certain)
+    }
+
+    SECTION("std::uniform_int_distribution stays in range") {
+        FastRNG rng(5);
+        std::uniform_int_distribution<int> die(1, 6);
+        for (int i = 0; i < 1000; ++i) {
+            const int roll = die(rng);
+            REQUIRE(roll >= 1);
+            REQUIRE(roll <= 6);
+        }
     }
 }
