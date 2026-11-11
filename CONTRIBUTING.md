@@ -31,6 +31,12 @@ Every change must pass this checklist:
       compilers. Differences of 1 to 2 ns are within the noise.
 - [ ] If the change affects how the library is used, `README.md` is updated.
 
+GitHub Actions runs most of this checklist automatically on every push and pull request
+(`.github/workflows/ci.yml`): the tests with g++ and clang on Linux, Apple clang on macOS and
+MSYS2 g++ on Windows, in debug and release, with warnings as errors, plus the formatting check.
+A pull request is merged only when every job is green. The CI uses the clang-format of Ubuntu
+24.04 (version 18); another version may format a few lines differently.
+
 ## Code conventions
 
 - **Language:** everything in the code is in English: names, comments, error messages, test

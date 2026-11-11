@@ -1,0 +1,89 @@
+# Continuous integration: builds and tests Alelus on every push and pull request.
+#
+# Each job starts on a clean virtual machine, so a green result means the project builds
+# from the repository alone, not only on the machine where it was written.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # adds a "Run workflow" button in the Actions tab
+
+# A newer push to the same branch cancels the run still in progress for the older one
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The jobs only read the repository
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux, ${{ matrix.compiler }}, ${{ matrix.mode }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false # one failing combination does not cancel the others
+      matrix:
+        compiler: [g++, clang++]
+        mode: [debug, release]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compiler version
+        run: ${{ matrix.compiler }} --version
+      - name: Build and run the tests
+        run: make tests CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} WERROR=1
+      - name: Build the benchmark and the package
+        if: matrix.mode == 'release'
+        run: |
+          make bench-binary CXX=${{ matrix.compiler }} MODE=release WERROR=1
+          make dist CXX=${{ matrix.compiler }} WERROR=1
+
+  macos:
+    name: macOS, Apple clang, ${{ matrix.mode }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [debug, release]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compiler version
+        run: clang++ --version
+      - name: Build and run the tests
+        run: make tests CXX=clang++ MODE=${{ matrix.mode }} WERROR=1
+
+  windows:
+    name: Windows, MSYS2 UCRT64 g++, ${{ matrix.mode }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [debug, release]
+    defaults:
+      run:
+        shell: msys2 {0} # every "run" below goes through the MSYS2 shell
+    steps:
+      - uses: actions/checkout@v6
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: make mingw-w64-ucrt-x86_64-gcc
+      - name: Compiler version
+        run: g++ --version
+      - name: Build and run the tests
+        run: make tests MODE=${{ matrix.mode }} WERROR=1
+
+  format:
+    name: Formatting
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: clang-format version
+        run: clang-format --version
+      - name: Check that make format changes nothing
+        run: |
+          make format
+          git diff --exit-code
