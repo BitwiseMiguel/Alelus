@@ -69,6 +69,23 @@ public:
                                    std::numeric_limits<T>::max());
     }
 
+    /// Uniform real in [0, 1): 0 can come out, 1 never does.
+    double uniform_real() {
+        return detail::uniform_real(*this);
+    }
+
+    /// Uniform real in [0, b): b itself never comes out.
+    /// Throws std::invalid_argument unless b is positive and finite.
+    double uniform_real(double b) {
+        return detail::uniform_real(*this, 0.0, b);
+    }
+
+    /// Uniform real in [a, b): b itself never comes out.
+    /// Throws std::invalid_argument unless a < b, both finite.
+    double uniform_real(double a, double b) {
+        return detail::uniform_real(*this, a, b);
+    }
+
     // Neither copyable nor movable: the secret state lives in exactly one place
     CryptoRNG(const CryptoRNG &) = delete;
     CryptoRNG &operator=(const CryptoRNG &) = delete;

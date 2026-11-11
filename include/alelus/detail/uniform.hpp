@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bit>
+#include <cmath>
 #include <concepts>
 #include <cstdint>
 #include <limits>
@@ -62,6 +63,38 @@ T uniform_int(Rng &rng, T lo, T hi) {
 
     const std::uint64_t offset = uniform_below(rng, span + 1);
     return static_cast<T>(static_cast<U>(static_cast<U>(lo) + static_cast<U>(offset)));
+}
+
+/// Uniform real in [0, 1).
+///
+/// A double has 53 bits of precision, so take the top 53 random bits and scale them by
+/// 2^-53. The possible results are k / 2^53 for k = 0 ... 2^53 - 1: evenly spaced and all
+/// equally likely. 1.0 itself can never come out.
+template <Random64 Rng>
+double uniform_real(Rng &rng) {
+    return static_cast<double>(rng() >> 11) * 0x1.0p-53;
+}
+
+/// Uniform real in [lo, hi). Throws std::invalid_argument unless lo < hi, both finite.
+template <Random64 Rng>
+double uniform_real(Rng &rng, double lo, double hi) {
+    if (!std::isfinite(lo) || !std::isfinite(hi) || !(lo < hi))
+        throw std::invalid_argument("uniform_real: requires lo < hi, both finite");
+
+    const double span = hi - lo;
+    double result;
+    do {
+        if (std::isfinite(span)) {
+            result = lo + uniform_real(rng) * span;
+        } else {
+            // hi - lo overflowed to infinity (for example [-DBL_MAX, DBL_MAX)). Work at half
+            // scale: multiplying by 0.5 and by 2 is exact, so the result is the same.
+            result = 2.0 * (0.5 * lo + uniform_real(rng) * (0.5 * hi - 0.5 * lo));
+        }
+        // Rounding can make lo + u * span come out as exactly hi. Draw again instead of
+        // clamping, so that no value receives extra probability.
+    } while (result >= hi);
+    return result;
 }
 
 /// Marks "no result type was given": use the common type of the two arguments.
