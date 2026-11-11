@@ -77,3 +77,16 @@ TEST_CASE("ChaCha20Generator: next()", "[chacha20][generator]") {
         CHECK(equal == 0);
     }
 }
+
+TEST_CASE("ChaCha20Generator: rekey()", "[chacha20][generator]") {
+    SECTION("equals a new generator with that key") {
+        cc::Key k1{}, k2{};
+        k2[5] = 9;
+        ChaCha20Generator gen(k1), fresh(k2);
+        for (int i = 0; i < 10; ++i)
+            (void)gen.next(); // leaves the buffer partly used
+        gen.rekey(k2);
+        for (int i = 0; i < 300; ++i)
+            REQUIRE(gen.next() == fresh.next());
+    }
+}
