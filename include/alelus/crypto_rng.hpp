@@ -86,6 +86,26 @@ public:
         return detail::uniform_real(*this, a, b);
     }
 
+    /// True with probability 1/2, like a fair coin.
+    bool bernoulli() {
+        return detail::bernoulli(*this);
+    }
+
+    /// True with probability p (for example 0.02 for 2%).
+    /// Throws std::invalid_argument if p is outside [0, 1] or is NaN.
+    bool bernoulli(double p) {
+        return detail::bernoulli(*this, p);
+    }
+
+    /// True with probability exactly k / n (for example bernoulli(1, 3) for exactly 1/3),
+    /// with no floating-point rounding.
+    /// Throws std::invalid_argument unless n > 0 and 0 <= k <= n.
+    template <std::integral K, std::integral N>
+        requires(!std::same_as<K, bool> && !std::same_as<N, bool>)
+    bool bernoulli(K k, N n) {
+        return detail::bernoulli(*this, k, n);
+    }
+
     // Neither copyable nor movable: the secret state lives in exactly one place
     CryptoRNG(const CryptoRNG &) = delete;
     CryptoRNG &operator=(const CryptoRNG &) = delete;

@@ -97,6 +97,39 @@ double uniform_real(Rng &rng, double lo, double hi) {
     return result;
 }
 
+/// True with probability 1/2. Uses only the top bit, which is as random as any other.
+template <Random64 Rng>
+bool bernoulli(Rng &rng) {
+    return (rng() >> 63) != 0;
+}
+
+/// True with probability p, for p in [0, 1].
+///
+/// uniform_real() is in [0, 1), so it falls below p with probability p. The edges need no
+/// special case: nothing is below 0 (p = 0 is never true), and uniform_real() never
+/// reaches 1 (p = 1 is always true).
+/// Throws std::invalid_argument if p is outside [0, 1] or is NaN.
+template <Random64 Rng>
+bool bernoulli(Rng &rng, double p) {
+    // Written as !(inside) on purpose: every comparison with NaN is false, so NaN is caught
+    // here; "p < 0.0 || p > 1.0" would let NaN through.
+    if (!(p >= 0.0 && p <= 1.0))
+        throw std::invalid_argument("bernoulli: p must be in [0, 1]");
+    return uniform_real(rng) < p;
+}
+
+/// True with probability EXACTLY k / n, with no floating point involved: a uniform integer
+/// in [0, n) is below k in exactly k of the n cases. 1.0 / 3 is not exactly 1/3 as a double;
+/// bernoulli(rng, 1, 3) is.
+/// Throws std::invalid_argument unless n > 0 and 0 <= k <= n.
+template <Random64 Rng, std::integral K, std::integral N>
+bool bernoulli(Rng &rng, K k, N n) {
+    // std::cmp_* compare the values correctly even when K and N mix signed and unsigned
+    if (std::cmp_less_equal(n, 0) || std::cmp_less(k, 0) || std::cmp_greater(k, n))
+        throw std::invalid_argument("bernoulli: requires n > 0 and 0 <= k <= n");
+    return uniform_below(rng, static_cast<std::uint64_t>(n)) < static_cast<std::uint64_t>(k);
+}
+
 /// Marks "no result type was given": use the common type of the two arguments.
 struct DeduceType {};
 
