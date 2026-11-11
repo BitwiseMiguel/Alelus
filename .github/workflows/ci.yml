@@ -38,6 +38,8 @@ jobs:
         run: ${{ matrix.compiler }} --version
       - name: Build and run the tests
         run: make tests CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} WERROR=1
+      - name: Build and run the examples
+        run: make examples CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} WERROR=1
       - name: Build the benchmark and the package
         if: matrix.mode == 'release'
         run: |
@@ -60,6 +62,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libclang-rt-18-dev
       - name: Build and run the tests with AddressSanitizer and UndefinedBehaviorSanitizer
         run: make tests CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} SANITIZE=1 WERROR=1
+      - name: Build and run the examples with the sanitizers
+        run: make examples CXX=${{ matrix.compiler }} MODE=${{ matrix.mode }} SANITIZE=1 WERROR=1
 
   macos:
     name: macOS, Apple clang, ${{ matrix.mode }}
@@ -74,6 +78,8 @@ jobs:
         run: clang++ --version
       - name: Build and run the tests
         run: make tests CXX=clang++ MODE=${{ matrix.mode }} WERROR=1
+      - name: Build and run the examples
+        run: make examples CXX=clang++ MODE=${{ matrix.mode }} WERROR=1
 
   windows:
     name: Windows, MSYS2 UCRT64 g++, ${{ matrix.mode }}
@@ -96,9 +102,11 @@ jobs:
         run: g++ --version
       - name: Build and run the tests
         run: make tests MODE=${{ matrix.mode }} WERROR=1
+      - name: Build and run the examples
+        run: make examples MODE=${{ matrix.mode }} WERROR=1
 
   format:
-    name: Formatting
+    name: Formatting and README
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -108,3 +116,5 @@ jobs:
         run: |
           make format
           git diff --exit-code
+      - name: Check that the README example is examples/quick_start.cpp
+        run: make check-docs
