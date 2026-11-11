@@ -1,8 +1,8 @@
 # =============================================================================
 # Alelus — Makefile
 #
-#   make             build the library (when there is code in src/)
-#   make tests       build and run the tests (when there are tests in tests/)
+#   make             build the library
+#   make tests       build and run the tests
 #   make bench       build (in release mode) and run the benchmark; B=name filters it
 #   make dist        package the release library and headers in dist/alelus/
 #   make format      format every source file with clang-format

@@ -110,8 +110,7 @@ public:
     }
 
     /// Shuffles a sequence in place (std::vector, std::array, a C array, ...): every order is
-    /// equally likely. Unlike std::shuffle, the result for a given seed is the same on every
-    /// compiler and operating system.
+    /// equally likely.
     ///
     /// To shuffle only part of a vector, pass a std::span over that part. Only those positions
     /// change, and only among themselves:
