@@ -85,8 +85,9 @@ Only `FastRNG`:
 | `state()`, `==` | Read the state; compare two generators |
 
 Also available: `alelus::WeightedSampler` (Vose's alias method, for weights used many times),
-`alelus::os_random_bytes(span)` (bytes straight from the operating system) and
-`alelus::SplitMix64`.
+`alelus::os_random_bytes(span)` (bytes straight from the operating system),
+`alelus::SplitMix64`, and the version: `alelus::version` (`"0.1.0"`) and the
+`ALELUS_VERSION` macros, usable in `#if`.
 
 ## Guarantees
 
@@ -213,6 +214,10 @@ operating system, and `.clang-format` writes CRLF when it formats.
 - M. D. Vose, *A Linear Algorithm for Generating Random Numbers with a Given Distribution*
   (1991)
 - G. L. Steele, D. Lea, C. H. Flood, *Fast Splittable Pseudorandom Number Generators* (2014)
+
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 

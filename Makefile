@@ -197,7 +197,7 @@ dist:
 	@mkdir -p $(DIST)/include $(DIST)/lib
 	@cp -r include/alelus $(DIST)/include/
 	@cp build/release/libalelus.a $(DIST)/lib/
-	@cp README.md LICENSE $(DIST)/
+	@cp README.md CHANGELOG.md LICENSE $(DIST)/
 	@echo "Package ready in $(DIST)/"
 
 format:
