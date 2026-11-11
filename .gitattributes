@@ -1,0 +1,8 @@
+# Every text file uses CRLF line endings in the working copy, on every operating system.
+# Git stores them with LF internally and converts on checkout.
+* text=auto eol=crlf
+
+# Files that must never be converted
+*.png binary
+*.jpg binary
+*.zip binary

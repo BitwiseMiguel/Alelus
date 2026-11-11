@@ -2,6 +2,8 @@
 # Everything the Makefile produces goes into build/ (objects, dependency files,
 # the library and the test program), so deleting it is always safe.
 /build/
+# make dist puts the packaged library here
+/dist/
 
 # --- Compiler output, in case something is built outside build/ -------------
 # Object files

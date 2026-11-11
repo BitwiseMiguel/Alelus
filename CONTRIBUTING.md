@@ -34,6 +34,7 @@ Every change must pass this checklist:
   names and commit messages.
 - **Standard:** C++20, with no compiler extensions.
 - **Formatting:** whatever `.clang-format` produces. Run `make format`; do not format by hand.
+- **Line endings:** CRLF in every text file. `.gitattributes` and `.clang-format` take care of it.
 - **Naming:** `PascalCase` for types, `snake_case` for functions and variables, `m_` prefix for
   private members, `UPPER_CASE` for macros.
 - **Headers:** `#pragma once`, public headers live in `include/alelus/`, implementation details in
@@ -44,7 +45,12 @@ Every change must pass this checklist:
 ## Tests
 
 - Tests use [Catch2](https://github.com/catchorg/Catch2) and live in `tests/`.
-- Name each test after the component it checks: `"FastRNG: the same seed gives the same sequence"`.
+- Group tests by topic: one `TEST_CASE` per component and feature, named
+  `"<Component>: <feature>"` (for example `"FastRNG: construction"`), with one `SECTION` per
+  behaviour (for example `"the all-zero state is rejected"`).
+- Shared setup goes at the top of the `TEST_CASE`, before the sections: Catch2 runs it again for
+  each section, so every section starts from a clean state.
+- Compile-time checks (`static_assert`) go at file scope, above the test cases.
 - Statistical tests must use a **fixed seed**, so they are deterministic. A test that fails
   only sometimes is a bug in the test.
 - When a test checks a value from a paper, an RFC or another implementation, say where the
