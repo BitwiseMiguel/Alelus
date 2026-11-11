@@ -85,3 +85,46 @@ TEST_CASE("FastRNG: next()", "[fast]") {
         CHECK(equal == 0);
     }
 }
+
+TEST_CASE("FastRNG: seeding", "[fast]") {
+    SECTION("the state is the first four SplitMix64 outputs") {
+        const FastRNG rng(0);
+        const FastRNG::State expected{0xe220a8397b1dcdafULL, 0x6e789e6aa1b965f4ULL,
+                                      0x06c45d188009454fULL, 0xf88bb8a8724c81ecULL};
+        CHECK(rng.state() == expected);
+    }
+
+    SECTION("reference sequence for seed 0") {
+        FastRNG rng(0);
+        CHECK(rng.next() == 0x99ec5f36cb75f2b4ULL);
+        CHECK(rng.next() == 0xbf6e1f784956452aULL);
+        CHECK(rng.next() == 0x1a5f849d4933e6e0ULL);
+        CHECK(rng.next() == 0x6aa594f1262d2d2cULL);
+        CHECK(rng.next() == 0xbba5ad4a1f842e59ULL);
+    }
+
+    SECTION("reference sequence for seed 42") {
+        FastRNG rng(42);
+        CHECK(rng.next() == 0x15780b2e0c2ec716ULL);
+        CHECK(rng.next() == 0x6104d9866d113a7eULL);
+        CHECK(rng.next() == 0xae17533239e499a1ULL);
+        CHECK(rng.next() == 0xecb8ad4703b360a1ULL);
+        CHECK(rng.next() == 0xfde6dc7fe2ec5e64ULL);
+    }
+
+    SECTION("the same seed gives the same sequence") {
+        FastRNG a(2026), b(2026);
+        for (int i = 0; i < 1000; ++i)
+            REQUIRE(a.next() == b.next());
+    }
+
+    SECTION("neighbouring seeds differ from the very first output") {
+        // Compare with "a difference in the last word takes two outputs to show": seeds 1
+        // and 2 differ in one bit, but SplitMix64 spreads that difference over all 256 bits
+        FastRNG a(1), b(2);
+        int equal = 0;
+        for (int i = 0; i < 1000; ++i)
+            equal += (a.next() == b.next());
+        CHECK(equal == 0);
+    }
+}
