@@ -29,12 +29,18 @@ public:
 
     explicit ChaCha20Generator(const chacha20::Key &key) noexcept;
 
+    /// Wipes the key and the buffer before the memory is released.
+    ~ChaCha20Generator();
+
     // Key material must never be duplicated
     ChaCha20Generator(const ChaCha20Generator &) = delete;
     ChaCha20Generator &operator=(const ChaCha20Generator &) = delete;
 
     /// Returns the next 64 bits, refilling the buffer when it is used up.
     std::uint64_t next() noexcept;
+
+    /// Replaces the key and throws away (wipes) everything left in the buffer.
+    void rekey(const chacha20::Key &key) noexcept;
 
 private:
     void refill() noexcept;
