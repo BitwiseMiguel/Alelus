@@ -41,6 +41,9 @@ src/              library sources
 tests/            unit tests (Catch2)
 ```
 
+All text files use Windows line endings (CRLF). `.gitattributes` keeps them that way on every
+operating system, and `.clang-format` writes CRLF when it formats.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

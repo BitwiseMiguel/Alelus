@@ -63,7 +63,7 @@ CompactNamespaces: false
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
-DeriveLineEnding: true
+DeriveLineEnding: false  # Do not guess the line ending from the file; use LineEnding
 DerivePointerAlignment: false
 DisableFormat: false
 EmptyLineAfterAccessModifier: Never  # Values: Empty, Never, Leave
@@ -98,7 +98,7 @@ JavaScriptQuotes: Leave  # Values: Leave, Single, Double
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: true
 LambdaBodyIndentation: Signature  # Values: OuterScope, Signature
-LineEnding: LF  # LF, CRLF, CR
+LineEnding: CRLF  # LF, CRLF, CR
 MacroBlockBegin: ''
 MacroBlockEnd: ''
 MaxEmptyLinesToKeep: 1
