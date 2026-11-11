@@ -9,6 +9,7 @@
 #include <random>
 #include <stdexcept>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
 
 using alelus::FastRNG;
@@ -187,5 +188,54 @@ TEST_CASE("FastRNG: standard library compatibility", "[fast]") {
             REQUIRE(roll >= 1);
             REQUIRE(roll <= 6);
         }
+    }
+}
+
+TEST_CASE("FastRNG: jump() and long_jump()", "[fast][jump]") {
+    // The expected values do NOT come from the published jump polynomials. They were
+    // computed independently, in Python, by raising the 256x256 bit matrix of the state
+    // transition to the power 2^128 (and 2^192) through repeated squaring, and applying it
+    // to the state {1, 2, 3, 4}. If this test passes, both the constants and the code are right.
+    FastRNG rng({1, 2, 3, 4});
+
+    SECTION("jump() advances 2^128 steps") {
+        rng.jump();
+        const FastRNG::State expected{0x8c7a153956b5f3d1ULL, 0x701f1a713401d85eULL,
+                                      0x6527f66a65469085ULL, 0x8386b786c4408050ULL};
+        CHECK(rng.state() == expected);
+        CHECK(rng.next() == 0xbbd2f312298443d8ULL);
+        CHECK(rng.next() == 0x62e57db2d5706577ULL);
+        CHECK(rng.next() == 0x34d1890374a6d72bULL);
+    }
+
+    SECTION("long_jump() advances 2^192 steps") {
+        rng.long_jump();
+        const FastRNG::State expected{0x096a8eb71295a400ULL, 0xdbf84991e50f4516ULL,
+                                      0x534ee745810d2a0eULL, 0x31655ca1a2215bf1ULL};
+        CHECK(rng.state() == expected);
+        CHECK(rng.next() == 0x527752a1d792704dULL);
+    }
+
+    SECTION("jump() is deterministic") {
+        FastRNG a(2026), b(2026);
+        a.jump();
+        b.jump();
+        CHECK(a == b);
+    }
+
+    SECTION("jumped copies give sequences that do not meet") {
+        // Usage pattern: one base generator, and one copy per thread, jumped i times
+        const FastRNG base(7);
+        FastRNG thread0 = base;
+        FastRNG thread1 = base;
+        thread1.jump();
+
+        std::unordered_set<std::uint64_t> seen;
+        for (int i = 0; i < 10000; ++i)
+            seen.insert(thread0.next());
+        int repeated = 0;
+        for (int i = 0; i < 10000; ++i)
+            repeated += static_cast<int>(seen.count(thread1.next()));
+        CHECK(repeated == 0);
     }
 }
