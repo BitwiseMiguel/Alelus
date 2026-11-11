@@ -23,6 +23,9 @@ public:
     static constexpr result_type max() noexcept {
         return std::numeric_limits<result_type>::max();
     }
+    /// Returns the next 64 bits. If the process was duplicated with fork() since the last
+    /// call, gets a new key from the operating system first: otherwise parent and child would
+    /// produce the same numbers.
     result_type operator()() noexcept;
     // -------------------------------------------------------------------------------------
 
@@ -35,7 +38,10 @@ public:
     CryptoRNG &operator=(const CryptoRNG &) = delete;
 
 private:
+    void rekey_from_os();
+
     detail::ChaCha20Generator m_generator;
+    std::uint64_t m_fork_generation = 0; // the fork counter when the key was last set
 };
 
 } // namespace alelus
