@@ -77,6 +77,23 @@ public:
             (void)next();
     }
 
+    /// Advances 2^128 steps at once. Typical use: one copy per thread, each one jumped
+    /// once more than the previous. The sequences are then 2^128 numbers apart and can
+    /// never overlap (FastRNG has a period of 2^256 - 1, so there is room for 2^128 of them).
+    void jump() noexcept {
+        constexpr State polynomial{0x180ec6d33cfd0abaULL, 0xd5a61266f0c9392cULL,
+                                   0xa9582618e03fc9aaULL, 0x39abdc4529b1661cULL};
+        apply_jump(polynomial);
+    }
+
+    /// Advances 2^192 steps at once: for example one long_jump() per machine, then jump()
+    /// for each thread on that machine.
+    void long_jump() noexcept {
+        constexpr State polynomial{0x76e15d3efefdcbbfULL, 0xc5004e441c522fb3ULL,
+                                   0x77710069854ee241ULL, 0x39109bb02acbe635ULL};
+        apply_jump(polynomial);
+    }
+
     /// Two generators are equal if their states are equal, that is, if they will produce
     /// exactly the same sequence. "= default" asks the compiler to compare every member.
     friend bool operator==(const FastRNG &, const FastRNG &) = default;
@@ -87,6 +104,26 @@ public:
     }
 
 private:
+    /// The state transition only uses XOR, shifts and rotations, so it is LINEAR over GF(2)
+    /// (bits, where addition is XOR). Advancing k steps is therefore T^k(s) for a 256x256
+    /// bit matrix T, and T^k can be written as a polynomial in T of degree < 256:
+    ///     T^k(s) = c0*s + c1*T(s) + c2*T^2(s) + ... + c255*T^255(s)
+    /// The jump constants are those 256 coefficients c0..c255 (published by the authors).
+    /// So: walk 256 steps, and XOR together the states whose coefficient is 1.
+    void apply_jump(const State &polynomial) noexcept {
+        State sum{0, 0, 0, 0};
+        for (const std::uint64_t word : polynomial) {
+            for (int bit = 0; bit < 64; ++bit) {
+                if (word & (std::uint64_t{1} << bit)) {
+                    for (int i = 0; i < 4; ++i)
+                        sum[i] ^= m_state[i];
+                }
+                (void)next();
+            }
+        }
+        m_state = sum;
+    }
+
     static State expand_seed(std::uint64_t seed) noexcept {
         SplitMix64 sm(seed);
         // Inside braces, C++ guarantees left-to-right evaluation: the four calls happen in order
